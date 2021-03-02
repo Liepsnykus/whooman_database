@@ -300,7 +300,6 @@ function successMsg(data) {
     console.log(data);
     if (data.message === "Data Updated") {
         let field = document.getElementById(previousField)
-        console.log(field);
         field.classList.add('bg-success', 'text-white', 'text-center', 'rounded')
         field.innerText = data.message
         setTimeout(function () {
