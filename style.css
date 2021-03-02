@@ -6,11 +6,45 @@ table {
 
 
 tr.green th {
-    background: rgb(173, 219, 173);
+    z-index: 20;
+    background: rgb(79, 175, 79);
     color: white;
 }
 th {
     background: white;
     position: sticky;
     top: 0;
+}
+
+.field {
+    width: 20%;
+    position: relative;
+}
+
+.field:hover {
+    background-color: rgb(231, 231, 231);
+    cursor: pointer;
+    transition: 0.2s;
+}
+.field:active {
+    background-color: rgb(214, 214, 214);
+}
+
+.deleteBtn:hover {
+    background-color: rgb(231, 231, 231);
+    color: red;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.deleteBtn:active {
+    background-color: rgb(214, 214, 214);
+}
+
+.editTools {
+    width: 100%;
+    bottom: -50px;
+    padding: 5px;
+    left: 0px;
+    justify-content: space-between;
+    z-index: 10;
 }
