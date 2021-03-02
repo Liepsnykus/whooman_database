@@ -1,33 +1,55 @@
 const tBody = document.getElementById('tBody')
+const modal = document.getElementById('exampleModal')
+const deleteModalBtn = document.getElementById('deleteModalBtn')
 
+let deleteId = ''
 let previousField = ''
 let previousFieldValue = ''
 let previousFieldParam = ''
 
 
 const fetchFn = {
-    getItems: function() {
+    getItems: function () {
         fetch('http://localhost/php_rest_whoomans/api/dataList/read.php')
-        .then(resp => resp.json())
-        .then(data => {
-            createTable(data);
-        })
-        .catch(error => console.error(error));
+            .then(resp => resp.json())
+            .then(data => {
+                createTable(data);
+            })
+            .catch(error => console.error(error));
     },
 
-    updateRow: function(data) {
+    updateRow: function (rowData) {
         fetch('http://localhost/php_rest_whoomans/api/dataList/update.php', {
             method: 'PUT',
-            body: JSON.stringify(data),
-        }) .then(resp => resp.json())
-        .then(data => {
-            
-            
-        })
+            body: JSON.stringify(rowData),
+        }).then(resp => resp.json())
+            .then(data => {
+                successMsg(data)
+
+            })
+    },
+
+    deleteRow: function () {
+        let deleteData = {
+            id: deleteId
+        }
+        fetch('http://localhost/php_rest_whoomans/api/dataList/delete.php', {
+            method: 'DELETE',
+            body: JSON.stringify(deleteData)
+        }).then(resp => resp.text())
+            .then(data => {
+
+                fetchFn.getItems()
+
+            })
     }
 }
 
+deleteModalBtn.addEventListener('click', fetchFn.deleteRow)
+
 function createTable(data) {
+
+    tBody.innerHTML = ''
 
     data.map(item => {
         let tRow = document.createElement('tr')
@@ -52,8 +74,11 @@ function createTable(data) {
         td5.innerText = item.gender
         let td6 = document.createElement('td')
         td6.classList.add('deleteBtn', 'text-center')
+        td6.setAttribute('data-toggle', 'modal')
+        td6.setAttribute('data-target', '#exampleModal')
         let deleteBtn = document.createElement('i')
         deleteBtn.classList.add('far', 'fa-trash-alt')
+
 
 
         tBody.prepend(tRow)
@@ -73,7 +98,9 @@ function createTable(data) {
         td4.myParam = 'dateField'
         td5.addEventListener('click', openEditField)
         td5.myParam = 'genderField'
-        td6.addEventListener('click', deleteRow)
+        td6.addEventListener('click', setDeleteId)
+        td6.myParam = item.id
+        deleteBtn.myParam = item.id
     })
 
 }
@@ -85,26 +112,20 @@ function editField(data) {
         case 'nameField':
             editFunctions.editName(data)
             fieldOpened = false
-            closeEditControls(data)
             break;
         case 'surnameField':
             editFunctions.editSurname(data)
             fieldOpened = false
-            // closeEditControls(data)
             break;
         case 'dateField':
             editFunctions.editDate(data)
             fieldOpened = false
-            // closeEditControls(data)
             break;
         case 'genderField':
             editFunctions.editGender(data)
             fieldOpened = false
-            // closeEditControls(data)
             break;
     }
-
-    console.log('sveiki');
 }
 
 const editFunctions = {
@@ -115,14 +136,12 @@ const editFunctions = {
             name: data.path[2].children[0].value,
             surname: data.path[3].children[2].innerText,
             date: data.path[3].children[3].innerText,
-            gender: data.path[3].children[4].innerText
-
+            gender: data.path[3].children[4].innerText,
+            fieldId: data.path[3].children[0].innerText + 'name'
         }
 
         fetchFn.updateRow(rowData)
 
-        console.log('this came from name fn object');
-        console.log(rowData);
     },
 
     editSurname: function (data) {
@@ -132,13 +151,12 @@ const editFunctions = {
             name: data.path[3].children[1].innerText,
             surname: data.path[2].children[0].value,
             date: data.path[3].children[3].innerText,
-            gender: data.path[3].children[4].innerText
-
+            gender: data.path[3].children[4].innerText,
+            fieldId: data.path[3].children[0].innerText + 'surname'
         }
 
         fetchFn.updateRow(rowData)
-        console.log('this came from edit Surname fn');
-        console.log(rowData);
+
     },
 
     editDate: function (data) {
@@ -147,38 +165,40 @@ const editFunctions = {
             name: data.path[3].children[1].innerText,
             surname: data.path[3].children[2].innerText,
             date: data.path[2].children[0].value,
-            gender: data.path[3].children[4].innerText
-
+            gender: data.path[3].children[4].innerText,
+            fieldId: data.path[3].children[0].innerText + 'date'
         }
 
         fetchFn.updateRow(rowData)
-        console.log(rowData);
-        console.log('this came from edit Date fn');
     },
 
     editGender: function (data) {
         console.log(data);
-        
+
         let rowData = {
             id: data.path[3].children[0].innerText,
             name: data.path[3].children[1].innerText,
             surname: data.path[3].children[2].innerText,
             date: data.path[3].children[3].innerText,
-            gender: ''
+            gender: '',
+            fieldId: data.path[3].children[0].innerText + 'gender'
         }
-        if(data.path[2].children[0][0].checked) {
+        if (data.path[2].children[0][0].checked) {
             rowData.gender = 'Male'
         } else {
             rowData.gender = 'Female'
         }
 
         fetchFn.updateRow(rowData)
-        console.log(rowData);
-        console.log('this came from editGender fn');
     }
+
 }
 
-function deleteRow(event) {
+function setDeleteId(event) {
+    deleteId = event.target.myParam
+}
+
+function display(event) {
     console.log(event);
 }
 
@@ -197,14 +217,15 @@ function openEditField(event) {
     event.target.removeEventListener('click', openEditField)
 
     target.innerHTML = ''
-    
-    
+
+
     switch (editFieldParam) {
         case 'nameField':
             input = document.createElement('input')
             input.classList.add('form-control')
             input.setAttribute('type', 'text')
             input.setAttribute('value', value)
+            input.addEventListener('submit', display)
             break;
 
         case 'surnameField':
@@ -222,7 +243,7 @@ function openEditField(event) {
         case 'genderField':
             input = document.createElement('form')
             input.classList.add('form-check', 'form-check-inline')
-            let maleInput = document.createElement ('input')
+            let maleInput = document.createElement('input')
             maleInput.classList.add('form-check-input')
             maleInput.setAttribute('type', 'radio')
             maleInput.setAttribute('value', 'Male')
@@ -234,7 +255,7 @@ function openEditField(event) {
             maleLabel.setAttribute('for', 'male')
             maleLabel.classList.add('form-check-label', 'mr-2')
             maleLabel.innerText = 'Male'
-            let femaleInput = document.createElement ('input')
+            let femaleInput = document.createElement('input')
             femaleInput.setAttribute('type', 'radio')
             femaleInput.setAttribute('value', 'Female')
             femaleInput.setAttribute('name', 'gender')
@@ -245,7 +266,7 @@ function openEditField(event) {
             femaleLabel.setAttribute('for', 'female')
             femaleLabel.classList.add('form-check-label')
             femaleLabel.innerText = 'Female'
-            
+
             input.appendChild(maleInput)
             input.appendChild(maleLabel)
             input.appendChild(femaleInput)
@@ -275,14 +296,39 @@ function openEditField(event) {
 
 }
 
-function closeEditControls(event) {
-    let field = document.getElementById(previousField)
-    if (field) {
-        field.innerHTML = ''
-        field.innerText = previousFieldValue
-        field.myParam = previousFieldParam
-        field.addEventListener('click', openEditField)
+function successMsg(data) {
+    console.log(data);
+    if (data.message === "Data Updated") {
+        let field = document.getElementById(previousField)
+        console.log(field);
+        field.classList.add('bg-success', 'text-white', 'text-center', 'rounded')
+        field.innerText = data.message
+        setTimeout(function () {
+            closeEditControls('success')
+        }, 1000)
+
     }
+
+}
+
+function closeEditControls(param) {
+    if (param === 'success') {
+        previousField = ''
+        previousFieldValue = ''
+        previousFieldParam = ''
+
+        fetchFn.getItems()
+    } else {
+        let field = document.getElementById(previousField)
+        if (field) {
+            field.innerHTML = ''
+            field.innerText = previousFieldValue
+            field.myParam = previousFieldParam
+            field.addEventListener('click', openEditField)
+        }
+    }
+
+
 }
 
 fetchFn.getItems()
